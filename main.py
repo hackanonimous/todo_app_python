@@ -1,28 +1,104 @@
 import flet as ft
 
 
-def main(page: ft.Page):
-    def click(e):
-        page.add(ft.Checkbox(label=nueva_tarea.value))
-        nueva_tarea.value = ""
-        page.update()
+class Task(ft.Column):
+    def __init__(self, task_name, task_delete):
+        super().__init__()
+        self.task_name = task_name
+        self.task_delete = task_delete
+        self.display_task = ft.Checkbox(value=False, label=self.task_name)
+        self.edit_name = ft.TextField(expand=1)
 
-    nueva_tarea = ft.TextField(hint_text="Escribe tu tarea", expand=True)
-    vista_tareas = ft.Column()
-    vista = ft.Column(
-        width=600,
-        controls=[
+        self.display_view = ft.Row(
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                self.display_task,
+                ft.Row(
+                    spacing=0,
+                    controls=[
+                        ft.IconButton(
+                            icon=ft.icons.CREATE_OUTLINED,
+                            tooltip="Editar",
+                            on_click=self.edit_clicked,
+                        ),
+                        ft.IconButton(
+                            icon=ft.icons.DELETE_OUTLINE,
+                            tooltip="Eliminar",
+                            on_click=self.delete_clicked,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        self.edit_view = ft.Row(
+            visible=False,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                self.edit_name,
+                ft.IconButton(
+                    icon=ft.icons.DONE_OUTLINE_OUTLINED,
+                    icon_color=ft.colors.GREEN,
+                    tooltip="Actualizar",
+                    on_click=self.save_clicked,
+                ),
+            ],
+        )
+        self.controls = [self.display_view, self.edit_view]
+
+    def edit_clicked(self, e):
+        self.edit_name.value = self.display_task.label
+        self.display_view.visible = False
+        self.edit_view.visible = True
+        self.update()
+
+    def save_clicked(self, e):
+        self.display_task.label = self.edit_name.value
+        self.display_view.visible = True
+        self.edit_view.visible = False
+        self.update()
+
+    def delete_clicked(self, e):
+        self.task_delete(self)
+
+
+class TodoApp(ft.Column):
+    def __init__(self):
+        super().__init__()
+        self.nueva_tarea = ft.TextField(hint_text="Escribe tu tarea", expand=True)
+        self.vista_tareas = ft.Column()
+        self.width = 400
+        self.controls = [
             ft.Row(
                 controls=[
-                    nueva_tarea,
-                    ft.FloatingActionButton(icon=ft.icons.ADD, on_click=click),
+                    self.nueva_tarea,
+                    ft.FloatingActionButton(
+                        icon=ft.icons.ADD, on_click=self.add_clicked
+                    ),
                 ]
             ),
-            vista_tareas,
-        ],
-    )
+            self.vista_tareas,
+        ]
+
+    def add_clicked(self, e):
+        task = Task(self.nueva_tarea.value, self.task_delete)
+        self.vista_tareas.controls.append(task)
+        self.nueva_tarea.value = ""
+        self.update()
+
+    def task_delete(self, task):
+        self.vista_tareas.controls.remove(task)
+        self.update()
+
+
+def main(page: ft.Page):
+    page.title = "Aplicacion de Tareas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.add(vista)
+    # page.update()
+    todo = TodoApp()
+
+    page.add(todo)
 
 
 ft.app(main)
